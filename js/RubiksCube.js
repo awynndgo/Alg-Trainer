@@ -744,7 +744,8 @@ function generateOrientation(){
 }
 
 class AlgTest {
-    constructor(rawAlgs, scramble, solutions, preorientation, solveTime, time, set, visualCubeView, cubeType, orientRandPart) {
+    constructor(rawAlgStr, rawAlgs, scramble, solutions, preorientation, solveTime, time, set, visualCubeView, cubeType, orientRandPart) {
+        this.rawAlgStr = rawAlgStr;
         this.rawAlgs = rawAlgs;
         this.scramble = scramble;
         this.solutions = solutions;
@@ -817,7 +818,7 @@ function generateAlgTest(){
     var time = Date.now();
     var visualCubeView = "plan";
 
-    var algTest = new AlgTest(rawAlgs, scramble, solutions, preorientation, solveTime, time, set, visualCubeView, cubeType, orientRandPart);
+    var algTest = new AlgTest(rawAlgStr, rawAlgs, scramble, solutions, preorientation, solveTime, time, set, visualCubeView, cubeType, orientRandPart);
     return algTest;
 }
 function testAlg(algTest, addToHistory=true){
@@ -1386,6 +1387,34 @@ function isUsingVirtualCube(){
     }
 }
 
+function excludeAlg(){
+    var lastTest = algorithmHistory[historyIndex];//[algorithmHistory.length-1];
+    var caseStr = lastTest.rawAlgStr;
+    if (excludedAlgs.indexOf(caseStr) === -1){
+        excludedAlgs.push(caseStr);
+        shouldRecalculateStatistics = true;
+        console.log("Excluded case: " + caseStr);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+function includeAlg(){
+    var lastTest = algorithmHistory[historyIndex];
+    var caseStr = lastTest.rawAlgStr;
+    var idx = excludedAlgs.indexOf(caseStr);
+    if (idx > -1){
+        excludedAlgs.splice(idx, 1);
+        shouldRecalculateStatistics = true;
+        console.log("Reincluded case: " + caseStr)
+        return true;
+    }
+    else {
+        return false;
+    }
+}
 
 var listener = new Listener();
 
@@ -1453,28 +1482,20 @@ function updateControls() {
         displayAlgorithmFromHistory(historyIndex);
     });
     listener.register(new KeyCombo("KeyD", {"alt": true}), function(){
-        var lastTest = algorithmHistory[historyIndex];//[algorithmHistory.length-1];
-        var caseAlgs = lastTest.rawAlgs.join("/");
-        if(excludedAlgs.indexOf(caseAlgs) === -1){
-            excludedAlgs.push(caseAlgs);
-            shouldRecalculateStatistics = true;
-            alert("Successfully excluded case!");
+        if (excludeAlg()){
+            nextScramble();
+            doNothingNextTimeSpaceIsPressed = false;
         }
     });
-    listener.register(new KeyCombo("KeyD", {"alt": true, "shift":true}), function(){
-        var lastTest = algorithmHistory[historyIndex];
-        var caseAlgs = lastTest.rawAlgs.join("/");
-        var idx = excludedAlgs.indexOf(caseAlgs);
-        if(idx > -1){
-            excludedAlgs.splice(idx, 1);
-            shouldRecalculateStatistics = true;
-            alert("Successfully undid case exclusion!");
-        }
+    listener.register(new KeyCombo("KeyD", {"alt": true, "shift": true}), function(){
+        excludeAlg();
+    });
+    listener.register(new KeyCombo("KeyZ", {"alt": true}), function(){
+        includeAlg();
     });
     listener.register(new KeyCombo("KeyR", {"alt": true}), function(){
         excludedAlgs = [];
         shouldRecalculateStatistics = true;
-        alert("Cleared case exclusion list!");
     })
 }
 
